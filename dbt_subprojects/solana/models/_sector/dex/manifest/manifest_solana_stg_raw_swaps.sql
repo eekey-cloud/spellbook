@@ -30,6 +30,10 @@ WITH swaps AS (
     , tx_signer
     , tx_index
     , CAST(NULL as VARCHAR) AS pool_id -- Manifest does not use a pool system like other AMM's
+    , account_arguments[6] AS vault_a
+    , account_arguments[7] AS vault_b
+    , account_arguments[8] AS vault_c
+    , BYTEARRAY_SUBSTRING(data, 1, 1) as disc --- to identify swap type and use vaults accordingly
     , {{ solana_instruction_key(
           'block_slot'
         , 'tx_index'
