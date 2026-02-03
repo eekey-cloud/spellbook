@@ -106,8 +106,6 @@ WITH swaps AS (
         , s.inner_instruction_index
         , s.tx_index
         , s.surrogate_key
-    HAVING COUNT_IF(tf.inner_instruction_index = s.inner_instruction_index + 2) = 1
-       AND COUNT_IF(tf.inner_instruction_index = s.inner_instruction_index + 1) = 1
 )
 
 SELECT
