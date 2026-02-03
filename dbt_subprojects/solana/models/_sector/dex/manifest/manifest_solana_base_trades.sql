@@ -49,31 +49,76 @@ WITH swaps AS (
         , s.block_time
         , s.block_slot
         , CASE WHEN s.is_inner = false THEN 'direct' ELSE s.outer_executing_account END AS trade_source
-        , MAX(CASE 
-            WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
-            WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
-          END) AS token_bought_amount_raw
-        , MAX(CASE 
-            WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
-            WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
-          END) AS token_sold_amount_raw
-        , MAX(CASE 
-            WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.from_token_account 
-            WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.from_token_account 
-          END) AS token_bought_vault
-        , MAX(CASE 
-            WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.to_token_account 
-            WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.to_token_account 
-          END) AS token_sold_vault
-        -- Mint addresses
-        , MAX(CASE 
-            WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.token_mint_address 
-            WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.token_mint_address 
-          END) AS token_bought_mint_address
-        , MAX(CASE 
-            WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.token_mint_address 
-            WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.token_mint_address 
-          END) AS token_sold_mint_address
+          , MAX_BY(
+            CASE 
+                WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END,
+            CASE 
+                WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END
+          ) AS token_bought_amount_raw
+
+        -- Token SOLD: select the transfer with the largest amount TO vault
+        , MAX_BY(
+            CASE 
+                WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END,
+            CASE 
+                WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END
+          ) AS token_sold_amount_raw
+
+        -- Vault for bought token (from row with largest bought amount)
+        , MAX_BY(
+            CASE 
+                WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.from_token_account 
+                WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.from_token_account 
+            END,
+            CASE 
+                WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END
+          ) AS token_bought_vault
+
+        -- Vault for sold token (from row with largest sold amount)
+        , MAX_BY(
+            CASE 
+                WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.to_token_account 
+                WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.to_token_account 
+            END,
+            CASE 
+                WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END
+          ) AS token_sold_vault
+
+        -- Mint for bought token (from row with largest bought amount)
+        , MAX_BY(
+            CASE 
+                WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.token_mint_address 
+                WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.token_mint_address 
+            END,
+            CASE 
+                WHEN s.disc = 0x04 AND tf.from_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.from_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END
+          ) AS token_bought_mint_address
+
+        -- Mint for sold token (from row with largest sold amount)
+        , MAX_BY(
+            CASE 
+                WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.token_mint_address 
+                WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.token_mint_address 
+            END,
+            CASE 
+                WHEN s.disc = 0x04 AND tf.to_token_account IN (s.vault_a, s.vault_b) THEN tf.amount 
+                WHEN s.disc = 0x0d AND tf.to_token_account IN (s.vault_b, s.vault_c) THEN tf.amount 
+            END
+          ) AS token_sold_mint_address
         , s.pool_id AS project_program_id
         , s.tx_signer AS trader_id
         , s.tx_id
