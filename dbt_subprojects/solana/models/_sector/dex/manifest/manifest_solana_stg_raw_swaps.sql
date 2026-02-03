@@ -33,7 +33,7 @@ WITH swaps AS (
     , account_arguments[6] AS vault_a
     , account_arguments[7] AS vault_b
     , account_arguments[8] AS vault_c
-    , BYTEARRAY_SUBSTRING(data, 1, 1) as disc --- to identify swap type and use vaults accordingly
+    , BYTEARRAY_SUBSTRING(data, 1, 1) as disc -- instruction discriminator to identify swap type
     , {{ solana_instruction_key(
           'block_slot'
         , 'tx_index'
