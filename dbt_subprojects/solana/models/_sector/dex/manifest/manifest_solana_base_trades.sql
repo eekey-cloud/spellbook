@@ -151,6 +151,7 @@ WITH swaps AS (
         , s.inner_instruction_index
         , s.tx_index
         , s.surrogate_key
+   HAVING COUNT(DISTINCT tf.token_mint_address) = 2
 )
 
 SELECT
