@@ -85,7 +85,7 @@ WITH swaps AS (
         AND tf.block_date = s.block_date
         AND tf.block_slot = s.block_slot
         AND tf.outer_instruction_index = s.outer_instruction_index
-        AND tf.inner_instruction_index IN (s.inner_instruction_index + 1, s.inner_instruction_index + 2)
+        AND tf.inner_instruction_index BETWEEN s.inner_instruction_index + 1 AND s.inner_instruction_index + 4
     WHERE tf.token_version IN ('spl_token', 'spl_token_2022')
         {% if is_incremental() -%}
         AND {{ incremental_predicate('tf.block_date') }}
