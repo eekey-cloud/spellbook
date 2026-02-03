@@ -45,7 +45,7 @@ WITH swaps AS (
     1=1
     AND executing_account = 'MNFSTqtC93rEfYHB6hF82sKdZpUDFWkViLByLd1k1Ms'
     AND tx_success = true
-    AND cardinality(account_arguments) >= 11
+    AND cardinality(account_arguments) >= 9
     AND BYTEARRAY_SUBSTRING(data, 1, 1) in (0x0d,0x04) --swap v2,swap
     {% if is_incremental() -%}
     AND {{ incremental_predicate('block_date') }}
