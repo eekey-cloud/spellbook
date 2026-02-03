@@ -40,7 +40,9 @@ WITH swaps AS (
         AND block_date >= DATE '{{ project_start_date }}'
         {% endif -%}
 )
-
+-- Vault logic by instruction type:
+--   0x04 (swap):    vault_a and vault_b are used
+--   0x0d (swap_v2): vault_b and vault_c are used
 , transfers AS (
     SELECT
           s.block_date
